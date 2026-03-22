@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pokopia Pokemon Sorter</title>
+<style>
+:root {
+  --bg: #1a1a2e;
+  --card: #16213e;
+  --accent: #e94560;
+  --accent2: #0f3460;
+  --text: #eee;
+  --muted: #aaa;
+  --wasteland: #8B7355;
+  --beach: #4682B4;
+  --ridges: #CD5C5C;
+  --skylands: #9370DB;
+  --palette: #6B8E23;
+  --multi: #708090;
+  --dreamisland: #DAA520;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+header {
+  background: linear-gradient(135deg, var(--accent2), var(--card), #0a0a1a);
+  padding: 2rem 1rem;
+  text-align: center;
+  border-bottom: 3px solid var(--accent);
+}
+header h1 {
+  font-size: 2.2rem;
+  background: linear-gradient(90deg, var(--accent), #ff8a80, var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.3rem;
+}
+header p {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Controls */
+.controls {
+  background: var(--card);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.search-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+#searchBox {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+#searchBox:focus { border-color: var(--accent); }
+#searchBox::placeholder { color: var(--muted); }
+
+.btn-clear {
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+.btn-clear:hover { opacity: 0.85; }
+
+/* Filter Groups */
+.filter-group {
+  margin-bottom: 0.6rem;
+}
+.filter-group:last-child { margin-bottom: 0; }
+
+.filter-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  padding: 0.35rem 0;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--muted);
+  transition: color 0.2s;
+}
+.filter-header:hover { color: var(--text); }
+.filter-header .arrow {
+  font-size: 0.7rem;
+  transition: transform 0.2s;
+}
+.filter-header .arrow.collapsed { transform: rotate(-90deg); }
+.filter-header .badge {
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 10px;
+  display: none;
+}
+.filter-header .badge.active { display: inline; }
+
+.chip-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.4rem 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.chip-container.collapsed { max-height: 0 !important; padding: 0; }
+
+.chip {
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05);
+  color: var(--muted);
+  transition: all 0.15s;
+}
+.chip:hover { border-color: rgba(255,255,255,0.3); color: var(--text); }
+.chip.active { color: #fff; border-color: transparent; }
+
+/* Area chip active colors */
+.chip[data-area="Withered Wasteland"].active { background: var(--wasteland); }
+.chip[data-area="Bleak Beach"].active { background: var(--beach); }
+.chip[data-area="Rocky Ridges"].active { background: var(--ridges); }
+.chip[data-area="Sparkling Skylands"].active { background: var(--skylands); }
+.chip[data-area="Palette Town"].active { background: var(--palette); }
+.chip[data-area="Dream Island"].active { background: var(--dreamisland); }
+
+/* Non-area active chips */
+.chip.active:not([data-area]) { background: var(--accent2); }
+
+/* Stats bar */
+.stats-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* Table */
+.table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--accent2);
+  color: #fff;
+  padding: 0.65rem 0.6rem;
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  border-bottom: 2px solid var(--accent);
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+thead th:hover { background: #163a6e; }
+thead th .sort-arrow { margin-left: 0.3rem; font-size: 0.65rem; opacity: 0.5; }
+thead th.sorted .sort-arrow { opacity: 1; }
+
+tbody tr {
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.1s;
+}
+tbody tr:hover { background: rgba(255,255,255,0.03); }
+tbody td {
+  padding: 0.45rem 0.6rem;
+  vertical-align: middle;
+}
+
+/* Pokemon cell */
+.poke-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 180px;
+}
+.poke-cell img {
+  width: 40px;
+  height: 40px;
+  image-rendering: pixelated;
+}
+.poke-name { font-weight: 600; }
+.poke-name.legendary { color: #FFD700; }
+.poke-name .special-npc { font-style: italic; font-weight: 400; font-size: 0.75rem; color: var(--muted); }
+
+/* Pill tags */
+.pill {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin: 0.1rem 0.15rem;
+  white-space: nowrap;
+}
+.pill-specialty {
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.pill-litter { background: rgba(76,175,80,0.15); border-color: rgba(76,175,80,0.3); }
+.litter-drop { color: #81c784; font-weight: 400; font-size: 0.68rem; }
+.pill-area {
+  color: #fff;
+}
+.area-withered-wasteland { background: var(--wasteland); }
+.area-bleak-beach { background: var(--beach); }
+.area-rocky-ridges { background: var(--ridges); }
+.area-sparkling-skylands { background: var(--skylands); }
+.area-palette-town { background: var(--palette); }
+.area-dream-island { background: var(--dreamisland); }
+
+/* Habitat links */
+.habitat-link {
+  color: #6db3f2;
+  text-decoration: none;
+  border-bottom: 1px dotted #6db3f2;
+  transition: color 0.15s;
+}
+.habitat-link:hover { color: #9ecfff; }
+
+/* Rarity */
+.rarity-common { color: #8bc34a; }
+.rarity-rare { color: #42a5f5; }
+.rarity-very-rare { color: #ab47bc; }
+
+/* Caught checkbox */
+.caught-cell { text-align: center; width: 40px; }
+.caught-cb {
+  width: 20px; height: 20px; cursor: pointer;
+  accent-color: var(--accent);
+}
+tr.caught-row { opacity: 0.55; }
+tr.caught-row:hover { opacity: 0.8; }
+tr.caught-row .poke-name { text-decoration: line-through; text-decoration-color: rgba(255,255,255,0.3); }
+
+/* Progress bar */
+.progress-wrap {
+  background: rgba(255,255,255,0.06);
+  border-radius: 10px;
+  overflow: hidden;
+  height: 22px;
+  position: relative;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
+  transition: width 0.4s ease;
+  border-radius: 10px;
+}
+.progress-text {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 600; color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+/* Litter drop filter chips */
+.chip.active[data-filterkey="litter"] { background: #2e7d32; }
+
+/* Caught filter chips */
+.chip[data-caught="Caught"].active { background: #2e7d32; }
+.chip[data-caught="Uncaught"].active { background: #c62828; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  header h1 { font-size: 1.5rem; }
+  .container { padding: 0.5rem; }
+  .controls { padding: 0.75rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Pokopia Pokemon Sorter</h1>
+  <p>Browse and filter all 305 Pokemon across every area, specialty, time, and weather</p>
+</header>
+
+<div class="container">
+  <div class="controls">
+    <div class="search-row">
+      <input type="text" id="searchBox" placeholder="Search by Pokemon name or habitat...">
+      <button class="btn-clear" onclick="clearAllFilters()">Clear All Filters</button>
+    </div>
+    <div class="filter-group" id="fg-area">
+      <div class="filter-header" onclick="toggleGroup('area')">
+        <span class="arrow" id="arrow-area">&#9660;</span>
+        Area
+        <span class="badge" id="badge-area">0</span>
+      </div>
+      <div class="chip-container" id="chips-area"></div>
+    </div>
+    <div class="filter-group" id="fg-specialty">
+      <div class="filter-header" onclick="toggleGroup('specialty')">
+        <span class="arrow" id="arrow-specialty">&#9660;</span>
+        Specialty
+        <span class="badge" id="badge-specialty">0</span>
+      </div>
+      <div class="chip-container" id="chips-specialty"></div>
+    </div>
+    <div class="filter-group" id="fg-time">
+      <div class="filter-header" onclick="toggleGroup('time')">
+        <span class="arrow" id="arrow-time">&#9660;</span>
+        Time
+        <span class="badge" id="badge-time">0</span>
+      </div>
+      <div class="chip-container" id="chips-time"></div>
+    </div>
+    <div class="filter-group" id="fg-weather">
+      <div class="filter-header" onclick="toggleGroup('weather')">
+        <span class="arrow" id="arrow-weather">&#9660;</span>
+        Weather
+        <span class="badge" id="badge-weather">0</span>
+      </div>
+      <div class="chip-container" id="chips-weather"></div>
+    </div>
+    <div class="filter-group" id="fg-litter">
+      <div class="filter-header" onclick="toggleGroup('litter')">
+        <span class="arrow" id="arrow-litter">&#9660;</span>
+        Litter Drop
+        <span class="badge" id="badge-litter">0</span>
+      </div>
+      <div class="chip-container" id="chips-litter"></div>
+    </div>
+    <div class="filter-group" id="fg-caught">
+      <div class="filter-header" onclick="toggleGroup('caught')">
+        <span class="arrow" id="arrow-caught">&#9660;</span>
+        Collection
+        <span class="badge" id="badge-caught">0</span>
+      </div>
+      <div class="chip-container" id="chips-caught">
+        <span class="chip" data-caught="Caught" onclick="toggleCaughtFilter('Caught',this)">Caught</span>
+        <span class="chip" data-caught="Uncaught" onclick="toggleCaughtFilter('Uncaught',this)">Uncaught</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    <div class="progress-text" id="progressText">0 / 305 Caught (0%)</div>
+  </div>
+
+  <div class="stats-bar">
+    <span id="statsText">Showing 305 of 305 Pokemon</span>
+  </div>
+
+  <div class="table-wrap">
+    <table id="pokeTable">
+      <thead>
+        <tr>
+          <th style="width:40px;cursor:default">&#10003;</th>
+          <th data-col="dex" data-type="num" onclick="sortTable('dex','num')"># <span class="sort-arrow">&#9650;</span></th>
+          <th data-col="name" data-type="str" onclick="sortTable('name','str')">Pokemon <span class="sort-arrow">&#9650;</span></th>
+          <th data-col="specialty" data-type="str" onclick="sortTable('specialty','str')">Specialty <span class="sort-arrow">&#9650;</span></th>
+          <th data-col="area" data-type="str" onclick="sortTable('area','str')">Area <span class="sort-arrow">&#9650;</span></th>
+          <th data-col="habitat" data-type="str" onclick="sortTable('habitat','str')">Habitat(s) <span class="sort-arrow">&#9650;</span></th>
+          <th data-col="time" data-type="str" onclick="sortTable('time','str')">Time <span class="sort-arrow">&#9650;</span></th>
+          <th data-col="weather" data-type="str" onclick="sortTable('weather','str')">Weather <span class="sort-arrow">&#9650;</span></th>
+          <th data-col="rarity" data-type="rarity" onclick="sortTable('rarity','rarity')">Rarity <span class="sort-arrow">&#9650;</span></th>
+        </tr>
+      </thead>
+      <tbody id="pokeBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// Sprite map: Pokemon name -> National Pokedex ID
+const SPRITE_MAP = {"Bulbasaur":1,"Ivysaur":2,"Venusaur":3,"Charmander":4,"Charmeleon":5,"Charizard":6,"Squirtle":7,"Wartortle":8,"Blastoise":9,"Pidgey":16,"Pidgeotto":17,"Pidgeot":18,"Oddish":43,"Gloom":44,"Vileplume":45,"Bellossom":182,"Paras":46,"Parasect":47,"Venonat":48,"Venomoth":49,"Bellsprout":69,"Weepinbell":70,"Victreebel":71,"Slowpoke":79,"Slowbro":80,"Slowking":199,"Magnemite":81,"Magneton":82,"Magnezone":462,"Onix":95,"Steelix":208,"Cubone":104,"Marowak":105,"Tyrogue":236,"Hitmonlee":106,"Hitmonchan":107,"Hitmontop":237,"Koffing":109,"Weezing":110,"Tangela":114,"Professor Tangrowth":465,"Tangrowth":465,"Scyther":123,"Scizor":212,"Pinsir":127,"Magikarp":129,"Gyarados":130,"Ditto":132,"Hoothoot":163,"Noctowl":164,"Heracross":214,"Volbeat":313,"Illumise":314,"Gulpin":316,"Swalot":317,"Cacnea":331,"Cacturne":332,"Combee":415,"Vespiquen":416,"Shellos":422,"Shellos East Sea":422,"Gastrodon":423,"Gastrodon East Sea":423,"Drifloon":425,"Drifblim":426,"Drilbur":529,"Excadrill":530,"Timburr":532,"Gurdurr":533,"Conkeldurr":534,"Litwick":607,"Lampent":608,"Chandelure":609,"Axew":610,"Fraxure":611,"Haxorus":612,"Goomy":704,"Sliggoo":705,"Goodra":706,"Cramorant":845,"Pichu":172,"Peakychu":25,"Pikachu":25,"Raichu":26,"Zubat":41,"Golbat":42,"Crobat":169,"Meowth":52,"Persian":53,"Psyduck":54,"Golduck":55,"Growlithe":58,"Arcanine":59,"Farfetch'd":83,"Grimer":88,"Muk":89,"Gastly":92,"Haunter":93,"Gengar":94,"Voltorb":100,"Electrode":101,"Exeggcute":102,"Exeggutor":103,"Happiny":440,"Chansey":113,"Blissey":242,"Elekid":239,"Electabuzz":125,"Electivire":466,"Lapras":131,"Munchlax":446,"Mosslax":143,"Snorlax":143,"Spinarak":167,"Ariados":168,"Mareep":179,"Flaaffy":180,"Ampharos":181,"Azurill":298,"Marill":183,"Azumarill":184,"Paldean Wooper":194,"Clodsire":980,"Smeargle":235,"Torchic":255,"Combusken":256,"Blaziken":257,"Wingull":278,"Pelipper":279,"Makuhita":296,"Hariyama":297,"Absol":359,"Piplup":393,"Prinplup":394,"Empoleon":395,"Audino":531,"Trubbish":568,"Garbodor":569,"Zorua":570,"Zoroark":571,"Minccino":572,"Cinccino":573,"Grubbin":736,"Charjabug":737,"Vikavolt":738,"Mimikyu":778,"Pawmi":921,"Pawmo":922,"Pawmot":923,"Tatsugiri Curly Form":952,"Tatsugiri Droopy Form":952,"Tatsugiri Stretchy Form":952,"Ekans":23,"Arbok":24,"Cleffa":173,"Clefairy":35,"Clefable":36,"Igglybuff":174,"Jigglypuff":39,"Wigglytuff":40,"Diglett":50,"Dugtrio":51,"Machop":66,"Machoke":67,"Machamp":68,"Geodude":74,"Graveler":75,"Golem":76,"Magby":240,"Magmar":126,"Magmortar":467,"Bonsly":438,"Sudowoodo":185,"Murkrow":198,"Honchkrow":430,"Larvitar":246,"Pupitar":247,"Tyranitar":248,"Lotad":270,"Lombre":271,"Ludicolo":272,"Mawile":303,"Torkoal":324,"Kricketot":401,"Kricketune":402,"Chatot":441,"Riolu":447,"Lucario":448,"Stereo Rotom":479,"Larvesta":636,"Volcarona":637,"Rowlet":722,"Dartrix":723,"Decidueye":724,"Scorbunny":813,"Raboot":814,"Cinderace":815,"Skwovet":819,"Greedent":820,"Rolycoly":837,"Carkol":838,"Coalossal":839,"Toxel":848,"Toxtricity Amped Form":849,"Toxtricity Low Key Form":849,"Fidough":926,"Dachsbun":927,"Charcadet":935,"Armarouge":936,"Ceruledge":937,"Glimmet":969,"Glimmora":970,"Gimmighoul":999,"Gholdengo":1000,"Vulpix":37,"Ninetales":38,"Poliwag":60,"Poliwhirl":61,"Poliwrath":62,"Politoed":186,"Abra":63,"Kadabra":64,"Alakazam":65,"Mime Jr.":439,"Mr. Mime":122,"Porygon":137,"Porygon2":233,"Porygon-Z":474,"Dratini":147,"Dragonair":148,"Dragonite":149,"Cyndaquil":155,"Quilava":156,"Typhlosion":157,"Misdreavus":200,"Mismagius":429,"Girafarig":203,"Farigiraf":981,"Ralts":280,"Kirlia":281,"Gardevoir":282,"Gallade":475,"Trapinch":328,"Vibrava":329,"Flygon":330,"Swablu":333,"Altaria":334,"Duskull":355,"Dusclops":356,"Dusknoir":477,"Beldum":374,"Metang":375,"Metagross":376,"Snivy":495,"Servine":496,"Serperior":497,"Froakie":656,"Frogadier":657,"Greninja":658,"Dedenne":702,"Noibat":714,"Noivern":715,"Rookidee":821,"Corvisquire":822,"Corviknight":823,"Dreepy":885,"Drakloak":886,"Dragapult":887,"Sprigatito":906,"Floragato":907,"Meowscarada":908,"Wattrel":940,"Kilowattrel":941,"Tinkatink":957,"Tinkatuff":958,"Tinkaton":959,"Aerodactyl":142,"Cranidos":408,"Rampardos":409,"Shieldon":410,"Bastiodon":411,"Tyrunt":696,"Tyrantrum":697,"Amaura":698,"Aurorus":699,"Eevee":133,"Vaporeon":134,"Jolteon":135,"Flareon":136,"Espeon":196,"Umbreon":197,"Leafeon":470,"Glaceon":471,"Sylveon":700,"Kyogre":382,"Raikou":243,"Entei":244,"Suicune":245,"Volcanion":721,"Articuno":144,"Zapdos":145,"Moltres":146,"Ho-Oh":250,"Lugia":249,"Mewtwo":150,"Mew":151,"Plusle":311,"Minun":312};
+
+// Pokemon data
+const POKEMON = [
+  {dex:197,name:"Toxtricity Low Key Form",specialty:["Generate", "Hype"],area:"Rocky Ridges",habitat:["Low-key rock stage"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:1,name:"Bulbasaur",specialty:["Grow"],area:"Withered Wasteland",habitat:["Tall Grass", "Bench with greenery"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:2,name:"Ivysaur",specialty:["Grow"],area:"Withered Wasteland",habitat:["Field of Flowers", "Bench with greenery"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:3,name:"Venusaur",specialty:["Grow", "Litter"],area:"Withered Wasteland",habitat:["Field of Flowers", "Garden Terrace"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:4,name:"Charmander",specialty:["Burn"],area:"Withered Wasteland",habitat:["Tall Grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:5,name:"Charmeleon",specialty:["Burn"],area:"Withered Wasteland",habitat:["Campsite"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:6,name:"Charizard",specialty:["Burn", "Fly"],area:"Withered Wasteland",habitat:["Tall Grass", "Berry-feast Campsite"],time:"All day",weather:"Sunny, Cloudy",rarity:"Very Rare"},
+  {dex:7,name:"Squirtle",specialty:["Water"],area:"Withered Wasteland",habitat:["Tall Grass", "Hydrated tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:8,name:"Wartortle",specialty:["Water"],area:"Withered Wasteland",habitat:["Hydrated tall grass"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:9,name:"Blastoise",specialty:["Water", "Trade"],area:"Withered Wasteland",habitat:["Hydrated tall grass", "Floating in the shade"],time:"All day",weather:"All",rarity:"Very Rare"},
+  {dex:10,name:"Pidgey",specialty:["Fly", "Search"],area:"Withered Wasteland",habitat:["Elevated tall grass", "Pretty flower bed"],time:"Morning/Day/Eve",weather:"All",rarity:"Common"},
+  {dex:11,name:"Pidgeotto",specialty:["Fly", "Search"],area:"Withered Wasteland",habitat:["Elevated tall grass", "Pretty flower bed"],time:"Morning/Day/Eve",weather:"All",rarity:"Rare"},
+  {dex:12,name:"Pidgeot",specialty:["Fly", "Chop"],area:"Withered Wasteland",habitat:["Luxury chirp-chirp meal"],time:"Morning/Day/Eve",weather:"All",rarity:"Common"},
+  {dex:13,name:"Oddish",specialty:["Grow"],area:"Withered Wasteland",habitat:["Tall Grass"],time:"Nighttime",weather:"All",rarity:"Common"},
+  {dex:14,name:"Gloom",specialty:["Grow"],area:"Bleak Beach",habitat:["Tropical vibes"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:15,name:"Vileplume",specialty:["Grow", "Litter"],area:"Withered Wasteland",habitat:["Chansey Resting area"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:16,name:"Bellossom",specialty:["Grow", "Hype"],area:"Withered Wasteland",habitat:["Chansey Resting area"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:17,name:"Paras",specialty:["Search"],area:"Withered Wasteland",habitat:["Elevated flower bed", "Flower garden"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:18,name:"Parasect",specialty:["Search"],area:"Withered Wasteland",habitat:["Elevated flower bed", "Flower garden"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:19,name:"Venonat",specialty:["Search"],area:"Withered Wasteland",habitat:["Illuminated tall grass", "Illuminated bench"],time:"Nighttime",weather:"All",rarity:"Common"},
+  {dex:20,name:"Venomoth",specialty:["Search"],area:"Withered Wasteland",habitat:["Illuminated tall grass", "Illuminated bench"],time:"Nighttime",weather:"All",rarity:"Rare"},
+  {dex:21,name:"Bellsprout",specialty:["Grow", "Litter"],area:"Withered Wasteland",habitat:["Tree-shaded  tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:22,name:"Weepinbell",specialty:["Grow", "Litter"],area:"Withered Wasteland",habitat:["Flowery table", "Irresistible scent and glow"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:23,name:"Victreebel",specialty:["Grow", "Chop"],area:"Withered Wasteland",habitat:["Flowery table", "Irresistible scent and glow"],time:"All day",weather:"All",rarity:"Very Rare"},
+  {dex:24,name:"Slowpoke",specialty:["Water", "Yawn"],area:"Withered Wasteland",habitat:["Seaside Tall Grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:25,name:"Slowbro",specialty:["Water", "Trade"],area:"Withered Wasteland",habitat:["Seaside Tall Grass", "Bed with a plush"],time:"All day",weather:"All",rarity:"Very Rare"},
+  {dex:26,name:"Slowking",specialty:["Water", "Teleport"],area:"Withered Wasteland",habitat:["Seaside Tall Grass", "Bed with a plush", "Fishing pond"],time:"All day",weather:"All",rarity:"Very Rare"},
+  {dex:27,name:"Magnemite",specialty:["Generate"],area:"Withered Wasteland",habitat:["Factory Storage"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:28,name:"Magneton",specialty:["Generate"],area:"Bleak Beach",habitat:["Trash can central", "Mini Game Corner"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:29,name:"Magnezone",specialty:["Generate", "Recycle"],area:"Bleak Beach",habitat:["Trash can central", "Mini Game Corner"],time:"All day",weather:"All",rarity:"Very Rare"},
+  {dex:30,name:"Onix",specialty:["Crush", "Bulldoze"],area:"Withered Wasteland",habitat:["Smooth tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:31,name:"Steelix",specialty:["Crush", "Bulldoze"],area:"Rocky Ridges",habitat:["Clink-clang iron construction"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:32,name:"Cubone",specialty:["Build"],area:"Withered Wasteland",habitat:["Grave with flowers"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:33,name:"Marowak",specialty:["Build"],area:"Withered Wasteland",habitat:["Grave with flowers"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:34,name:"Tyrogue",specialty:["Trade"],area:"Withered Wasteland",habitat:["Training waterfall"],time:"All day",weather:"All",rarity:"CommonCommon"},
+  {dex:35,name:"Hitmonlee",specialty:["Trade"],area:"Withered Wasteland",habitat:["Urgent Care"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:36,name:"Hitmonchan",specialty:["Trade"],area:"Withered Wasteland",habitat:["Exercise resting spot"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:37,name:"Hitmontop",specialty:["Trade"],area:"Withered Wasteland",habitat:["Gym first aid"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:38,name:"Koffing",specialty:["Recycle"],area:"Palette Town",habitat:["Trash collection site"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:39,name:"Weezing",specialty:["Recyvle"],area:"Palette Town",habitat:["Good old-fashioned antiques", "Trash collection site"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:40,name:"Tangela",specialty:["Grow", "Litter"],area:"Palette Town",habitat:["Nothin' but Poke Balls"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:41,name:"Professor Tangrowth",specialty:["Appraise"],area:"Dream Island",habitat:["Professor's treasure trove"],time:"All day",weather:"All",rarity:"Common",legendary:true,special:true},
+  {dex:41,name:"Tangrowth",specialty:["Grow", "Litter"],area:"Withered Wasteland",habitat:["Bench with greenery"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:42,name:"Scyther",specialty:["Chop"],area:"Withered Wasteland",habitat:["Tree-shaded  tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:43,name:"Scizor",specialty:["Chop"],area:"Palette Town",habitat:["Tree-shaded  tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:44,name:"Pinsir",specialty:["Chop", "Build"],area:"Withered Wasteland",habitat:["Tree-shaded  tall grass"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:45,name:"Magikarp",specialty:["???"],area:"Withered Wasteland",habitat:["Ocean fishing spot"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:46,name:"Gyarados",specialty:["Water"],area:"Sparkling Skylands",habitat:["Illuminated waterfall"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:47,name:"Ditto",specialty:["Transform"],area:"Dream Island",habitat:[],time:"-",weather:"-",rarity:"-",legendary:true},
+  {dex:48,name:"Hoothoot",specialty:["Trade", "Fly"],area:"Withered Wasteland",habitat:["Elevated tall grass", "Pretty flower bed", "Gently lit bed"],time:"Nighttime",weather:"All",rarity:"Common"},
+  {dex:49,name:"Noctowl",specialty:["Trade", "Fly"],area:"Withered Wasteland",habitat:["Elevated tall grass", "Gently lit bed"],time:"Nighttime",weather:"All",rarity:"Rare"},
+  {dex:50,name:"Heracross",specialty:["Chop", "Build"],area:"Withered Wasteland",habitat:["Tree-shaded  tall grass"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:51,name:"Volbeat",specialty:["Hype"],area:"Withered Wasteland",habitat:["Hydrated flower bed"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:52,name:"Illumise",specialty:["Hype"],area:"Withered Wasteland",habitat:["Hydrated flower bed"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:53,name:"Gulpin",specialty:["Storage"],area:"Withered Wasteland",habitat:["Tantalizing dining set"],time:"All day",weather:"All",rarity:"-"},
+  {dex:54,name:"Swalot",specialty:["Storage"],area:"Rocky Ridges",habitat:["Dinner table surprise"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:55,name:"Cacnea",specialty:["Grow"],area:"Withered Wasteland",habitat:["Sunny Day site"],time:"All day",weather:"Sunny",rarity:"Common"},
+  {dex:56,name:"Cacturne",specialty:["Grow", "Litter"],area:"Withered Wasteland",habitat:["Tree-shaded flower bed"],time:"Nighttime",weather:"All",rarity:"Rare"},
+  {dex:57,name:"Combee",specialty:["Litter"],area:"Withered Wasteland",habitat:["Pretty flower bed"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:58,name:"Vespiquen",specialty:["Gather Honey", "Search"],area:"Withered Wasteland",habitat:["Field of Flowers"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:59,name:"Shellos",specialty:["Water"],area:"Withered Wasteland",habitat:["Road Sign"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:59,name:"Shellos East Sea",specialty:["Water"],area:"Withered Wasteland",habitat:["Road Sign"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:60,name:"Gastrodon",specialty:["Water", "Trade"],area:"Withered Wasteland",habitat:["Ocean fishing spot"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:60,name:"Gastrodon East Sea",specialty:["Water", "Trade"],area:"Withered Wasteland",habitat:["Ocean fishing spot"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:61,name:"Drifloon",specialty:["Dream Island"],area:"Withered Wasteland",habitat:["Riding warm updrafts", "Bed with a plush", "Plush central"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:62,name:"Drifblim",specialty:["Fly", "Gather"],area:"Sparkling Skylands",habitat:["Plush central"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:63,name:"Drilbur",specialty:["Search"],area:"Withered Wasteland",habitat:["Fresh Veggie Field"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:64,name:"Excadrill",specialty:["Search", "Chop"],area:"Withered Wasteland",habitat:["Fresh Veggie Field"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:65,name:"Timburr",specialty:["Build"],area:"Withered Wasteland",habitat:["Boulder-shaded Tall Grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:66,name:"Gurdurr",specialty:["Build"],area:"Withered Wasteland",habitat:["Boulder-shaded Tall Grass", "Large luggage carrier"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:67,name:"Conkeldurr",specialty:["Build", "Crush"],area:"Sparkling Skylands",habitat:["Construction-site generator"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:68,name:"Litwick",specialty:["Burn"],area:"Withered Wasteland",habitat:["Grave offering", "Creepy grave offering"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:69,name:"Lampent",specialty:["Burn"],area:"Withered Wasteland",habitat:["Grave offering", "Creepy grave offering"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:70,name:"Chandelure",specialty:["Burn"],area:"Withered Wasteland",habitat:["Creepy grave offering"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:71,name:"Axew",specialty:["Chop"],area:"Withered Wasteland",habitat:["Lumberjack's workplace", "Crazy log handicrafts"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:72,name:"Fraxure",specialty:["Chop"],area:"Withered Wasteland",habitat:["Lumberjack's workplace", "Crazy log handicrafts"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:73,name:"Haxorus",specialty:["Chop", "Litter"],area:"Withered Wasteland",habitat:["Lumberjack's workplace", "Crazy log handicrafts"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:74,name:"Goomy",specialty:["Water"],area:"Withered Wasteland",habitat:["Tree-shaded flower bed", "Rain Dance site"],time:"All day",weather:"Rain",rarity:"Common"},
+  {dex:75,name:"Sliggoo",specialty:["Water"],area:"Withered Wasteland",habitat:["Hydrated tall grass"],time:"All day",weather:"Rain",rarity:"Common"},
+  {dex:76,name:"Goodra",specialty:["Water", "Trade"],area:"Withered Wasteland",habitat:["Very-berry space"],time:"All day",weather:"Rain",rarity:"Rare"},
+  {dex:77,name:"Cramorant",specialty:["Fly", "Water"],area:"Palette Town",habitat:["Hydrated tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:78,name:"Pichu",specialty:["Generate"],area:"Withered Wasteland",habitat:["Picnic Set"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:79,name:"Peakychu",specialty:["Illuminate"],area:"Bleak Beach",habitat:["Full recovery"],time:"All day",weather:"All",rarity:"Rare",special:true},
+  {dex:79,name:"Pikachu",specialty:["Generate"],area:"Palette Town",habitat:["Picnic Set"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:80,name:"Raichu",specialty:["Generate", "Hype"],area:"Sparkling Skylands",habitat:["Nature's market"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:81,name:"Zubat",specialty:["Search"],area:"Bleak Beach",habitat:["Tree-shaded Yellow tall grass", "Park bench"],time:"Nighttime",weather:"All",rarity:"Common"},
+  {dex:82,name:"Golbat",specialty:["Search"],area:"Bleak Beach",habitat:["Tree-shaded Yellow tall grass"],time:"Nighttime",weather:"All",rarity:"Rare"},
+  {dex:83,name:"Crobat",specialty:["Search", "Chop"],area:"Bleak Beach",habitat:["Elevated yellow tall grass", "Trash disposal site"],time:"Nighttime",weather:"All",rarity:"Very Rare"},
+  {dex:84,name:"Meowth",specialty:["Trade"],area:"Bleak Beach",habitat:["Resting spot", "Working the register"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:85,name:"Persian",specialty:["Trade", "Search"],area:"Sparkling Skylands",habitat:["Evil organization HQ"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:86,name:"Psyduck",specialty:["Search"],area:"Bleak Beach",habitat:["Hot-spring shower"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:87,name:"Golduck",specialty:["Search"],area:"Bleak Beach",habitat:["Hot-spring shower"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:88,name:"Growlithe",specialty:["Burn", "Search"],area:"Bleak Beach",habitat:["Perpetual mess", "Resort meal prep"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:89,name:"Arcanine",specialty:["Burn", "Search"],area:"Rocky Ridges",habitat:["Mini museum", "Magma fishing spot"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:91,name:"Grimer",specialty:["Litter"],area:"Bleak Beach",habitat:["Marsh fishing spot"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:92,name:"Muk",specialty:["Litter"],area:"Bleak Beach",habitat:["Marsh fishing spot"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:93,name:"Gastly",specialty:["Gather", "Trade"],area:"Bleak Beach",habitat:["Spooky study"],time:"Nighttime",weather:"All",rarity:"Common"},
+  {dex:94,name:"Haunter",specialty:["Gather", "Trade"],area:"Bleak Beach",habitat:["Surprise in store", "Spooky study"],time:"Nighttime",weather:"All",rarity:"Common"},
+  {dex:95,name:"Gengar",specialty:["Gather", "Trade"],area:"Bleak Beach",habitat:["Surprise in store"],time:"Nighttime",weather:"All",rarity:"Rare"},
+  {dex:96,name:"Voltorb",specialty:["Generate", "Explode"],area:"Bleak Beach",habitat:["Park bench", "Playing pirate"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:97,name:"Electrode",specialty:["Generate", "Explode"],area:"Bleak Beach",habitat:["Park bench", "Playing pirate"],time:"All day",weather:"All",rarity:"Very Rare"},
+  {dex:98,name:"Exeggcute",specialty:["Grow", "Teleport"],area:"Bleak Beach",habitat:["Tropical vibes", "Shaded beach", "Red tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:99,name:"Exeggutor",specialty:["Grow", "Teleport"],area:"Bleak Beach",habitat:["Tropical vibes", "Shaded beach"],time:"All day",weather:"All",rarity:"Very Rare"},
+  {dex:100,name:"Happiny",specialty:["Trade"],area:"Bleak Beach",habitat:["Alarm clock sleep zone", "Working the register"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:101,name:"Chansey",specialty:["Trade"],area:"Bleak Beach",habitat:["Full recovery"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:102,name:"Blissey",specialty:["Trade", "Litter"],area:"Bleak Beach",habitat:["Cuteness overload"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:103,name:"Elekid",specialty:["Generate"],area:"Bleak Beach",habitat:["Vending machine set"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:104,name:"Electabuzz",specialty:["Generate"],area:"Bleak Beach",habitat:["Trash can central", "Light-up stage"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:105,name:"Electivire",specialty:["Generate", "Crush"],area:"Bleak Beach",habitat:["Light-up stage", "Vending machine set"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:106,name:"Lapras",specialty:["Water"],area:"Bleak Beach",habitat:["Tropical seaside"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:107,name:"Munchlax",specialty:["Bulldoze"],area:"Palette Town",habitat:["Bed with a plush", "Tree-shaded snoozing Snorlax"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:108,name:"Mosslax",specialty:["Eat"],area:"Bleak Beach",habitat:["Gourmet's altar"],time:"All day",weather:"All",rarity:"Common",special:true},
+  {dex:109,name:"Snorlax",specialty:["Trade", "Bulldoze"],area:"Palette Town",habitat:["Tree-shaded snoozing Snorlax", "Good old-fashioned antiques"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:109,name:"Spinarak",specialty:["Litter"],area:"Bleak Beach",habitat:["Yellow tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:110,name:"Ariados",specialty:["Litter"],area:"Bleak Beach",habitat:["Yellow tall grass"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:111,name:"Mareep",specialty:["Generate", "Litter"],area:"Bleak Beach",habitat:["Overgrowth vending machine", "Knitting station"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:112,name:"Flaaffy",specialty:["Generate", "Litter"],area:"Bleak Beach",habitat:["Night festival venue", "Knitting station"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:113,name:"Ampharos",specialty:["Generate", "Trade"],area:"Bleak Beach",habitat:["Plain life"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:114,name:"Azurill",specialty:["Water", "Hype"],area:"Bleak Beach",habitat:["Hydrated yellow tall grass", "Perpetual mess"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:115,name:"Marill",specialty:["Water", "Hype"],area:"Bleak Beach",habitat:["Hydrated yellow tall grass", "Dock"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:116,name:"Azumarill",specialty:["Water", "Build"],area:"Bleak Beach",habitat:["Dock"],time:"All day",weather:"Rain",rarity:"Rare"},
+  {dex:117,name:"Paldean Wooper",specialty:["Litter"],area:"Bleak Beach",habitat:["Marshy tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:118,name:"Clodsire",specialty:["Litter", "Bulldoze"],area:"Bleak Beach",habitat:["Marshy tall grass", "Marsh fishing spot"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:119,name:"Smeargle",specialty:["Paint"],area:"Bleak Beach",habitat:["Tiny Atelier"],time:"All day",weather:"All",rarity:"Common",special:true},
+  {dex:120,name:"Torchic",specialty:["Burn"],area:"Bleak Beach",habitat:["Chirp-chirp meal", "Resort meal prep"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:121,name:"Combusken",specialty:["Burn", "Build"],area:"Bleak Beach",habitat:["Resort meal prep", "Furnace Spot"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:122,name:"Blaziken",specialty:["Burn", "Build"],area:"Bleak Beach",habitat:["Chirp-chirp meal", "Furnace Spot"],time:"All day",weather:"All",rarity:"Very Rare"},
+  {dex:123,name:"Wingull",specialty:["Water", "Fly"],area:"Bleak Beach",habitat:["Elevated yellow tall grass", "Windy Flower Bed"],time:"Morning/Day/Eve",weather:"All",rarity:"Common"},
+  {dex:124,name:"Pelipper",specialty:["Water", "Fly"],area:"Bleak Beach",habitat:["Elevated yellow tall grass", "Windy Flower Bed"],time:"Morning/Day/Eve",weather:"All",rarity:"Rare"},
+  {dex:125,name:"Makuhita",specialty:["Build", "Bulldoze"],area:"Bleak Beach",habitat:["Tree-shaded Yellow tall grass", "All packed up"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:126,name:"Hariyama",specialty:["Build", "Bulldoze"],area:"Bleak Beach",habitat:["Tree-shaded Yellow tall grass", "All packed up"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:127,name:"Absol",specialty:["Chop"],area:"Bleak Beach",habitat:["Welcoming resort"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:128,name:"Piplup",specialty:["Water"],area:"Bleak Beach",habitat:["Hydrated yellow tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:129,name:"Prinplup",specialty:["Water", "Trade"],area:"Bleak Beach",habitat:["Hydrated yellow tall grass", "Waterwheel Spot"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:130,name:"Empoleon",specialty:["Water", "Trade"],area:"Bleak Beach",habitat:["Tableside delivery cart", "Waterwheel Spot"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:131,name:"Audino",specialty:["Trade"],area:"Bleak Beach",habitat:["Working the register"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:132,name:"Trubbish",specialty:["Recycle"],area:"Bleak Beach",habitat:["Trash collection site"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:133,name:"Garbodor",specialty:["Recycle", "Litter"],area:"Bleak Beach",habitat:["Trash collection site"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:134,name:"Zorua",specialty:["Trade"],area:"Bleak Beach",habitat:["Breezy flower bed"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:135,name:"Zoroark",specialty:["Trade", "Chop"],area:"Bleak Beach",habitat:["Breezy flower bed", "Surprise in store"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:136,name:"Minccino",specialty:["Gather"],area:"Bleak Beach",habitat:["Changing area", "Private makeup stand"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:137,name:"Cinccino",specialty:["Gather", "Recycle"],area:"Bleak Beach",habitat:["Private makeup stand"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:138,name:"Grubbin",specialty:["Chop"],area:"Bleak Beach",habitat:["Yellow tall grass", "Vending machine break area"],time:"All day",weather:"All",rarity:"-"},
+  {dex:139,name:"Charjabug",specialty:["Generate", "Chop"],area:"Bleak Beach",habitat:["Vending machine break area"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:140,name:"Vikavolt",specialty:["Generate", "Chop"],area:"Withered Wasteland",habitat:["Tree-shaded flower bed"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:141,name:"Mimikyu",specialty:["Trade"],area:"Bleak Beach",habitat:["Pikachu space"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:142,name:"Pawmi",specialty:["Generate"],area:"Bleak Beach",habitat:["Breezy flower bed", "Tantalizing restaurant"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:143,name:"Pawmo",specialty:["Generate", "Crush"],area:"Bleak Beach",habitat:["Tantalizing restaurant", "Caf\u00e9 space"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:144,name:"Pawmot",specialty:["Generate", "Crush"],area:"Bleak Beach",habitat:["Caf\u00e9 space"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:145,name:"Tatsugiri Curly Form",specialty:["Trade"],area:"Bleak Beach",habitat:["Beach Set"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:145,name:"Tatsugiri Droopy Form",specialty:["Trade"],area:"Bleak Beach",habitat:["Beach Set"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:145,name:"Tatsugiri Stretchy Form",specialty:["Trade"],area:"Bleak Beach",habitat:["Beach Set"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:146,name:"Ekans",specialty:["Search"],area:"Rocky Ridges",habitat:["Hydrated graceful flower bed"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:147,name:"Arbok",specialty:["Search"],area:"Rocky Ridges",habitat:["Hydrated graceful flower bed"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:148,name:"Cleffa",specialty:["Hype"],area:"Rocky Ridges",habitat:["Graceful flower bed"],time:"Nighttime",weather:"All",rarity:"Common"},
+  {dex:149,name:"Clefairy",specialty:["Hype"],area:"Rocky Ridges",habitat:["Graceful flower bed", "Bronze landmark"],time:"Nighttime",weather:"All",rarity:"Common"},
+  {dex:150,name:"Clefable",specialty:["Hype", "Trade"],area:"Rocky Ridges",habitat:["Graceful flower bed", "Bronze landmark"],time:"Nighttime",weather:"All",rarity:"Very Rare"},
+  {dex:151,name:"Igglybuff",specialty:["Hype"],area:"Rocky Ridges",habitat:["Flower garden stump stage"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:152,name:"Jigglypuff",specialty:["Hype"],area:"Rocky Ridges",habitat:["Flower garden stump stage", "Recital stage"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:153,name:"Wigglytuff",specialty:["Hype", "Trade"],area:"Rocky Ridges",habitat:["Recital stage"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:154,name:"Diglett",specialty:["Hype"],area:"Rocky Ridges",habitat:["Tree-shaded red tall grass", "Container snacking"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:155,name:"Dugtrio",specialty:["Hype", "Crush"],area:"Rocky Ridges",habitat:["Tree-shaded red tall grass", "House party"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:156,name:"Machop",specialty:["Build", "Gather"],area:"Palette Town",habitat:["Boulder-shaded Tall Grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:157,name:"Machoke",specialty:["Build", "Gather"],area:"Rocky Ridges",habitat:["Grassy training field", "Box to the rhythm"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:158,name:"Machamp",specialty:["Build", "Gather"],area:"Rocky Ridges",habitat:["Grassy training field", "Clink-clang iron construction"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:159,name:"Geodude",specialty:["Crush"],area:"Palette Town",habitat:["Tall Grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:160,name:"Graveler",specialty:["Crush"],area:"Rocky Ridges",habitat:["Mossy boulder"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:161,name:"Golem",specialty:["Crush", "Trade"],area:"Rocky Ridges",habitat:["Mossy boulder"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:162,name:"Magby",specialty:["Burn"],area:"Withered Wasteland",habitat:["Pretty flower bed"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:163,name:"Magmar",specialty:["Burn"],area:"Rocky Ridges",habitat:["Digging and burning"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:164,name:"Magmortar",specialty:["Burn", "Crush"],area:"Rocky Ridges",habitat:["Mini kitchen"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:165,name:"Bonsly",specialty:["Bulldoze"],area:"Rocky Ridges",habitat:["Tree-shaded red tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:166,name:"Sudowoodo",specialty:["Trade"],area:"Rocky Ridges",habitat:["Tree-shaded red tall grass", "House party"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:167,name:"Murkrow",specialty:["Trade", "Fly"],area:"Rocky Ridges",habitat:["Elevated red tall grass", "Tree-shaded graceful flower bed"],time:"Nighttime",weather:"All",rarity:"Common"},
+  {dex:168,name:"Honchkrow",specialty:["Trade", "Fly"],area:"Rocky Ridges",habitat:["Chirping recital"],time:"Nighttime",weather:"All",rarity:"Rare"},
+  {dex:169,name:"Larvitar",specialty:["Crush", "Bulldoze"],area:"Rocky Ridges",habitat:["Mossy rest spot"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:170,name:"Pupitar",specialty:["Crush", "Bulldoze"],area:"Sparkling Skylands",habitat:["Tree-shaded pink tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:171,name:"Tyranitar",specialty:["Crush", "Bulldoze"],area:"Rocky Ridges",habitat:["Toil in the soil", "Mossy rest spot"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:172,name:"Lotad",specialty:["Water"],area:"Rocky Ridges",habitat:["Hydrated red tall grass", "Uplifting duckweed", "Hot-spring Fishing Spot"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:173,name:"Lombre",specialty:["Water"],area:"Rocky Ridges",habitat:["Hydrated red tall grass", "Hot-spring Fishing Spot"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:174,name:"Ludicolo",specialty:["Water", "Hype"],area:"Rocky Ridges",habitat:["Uplifting duckweed"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:175,name:"Mawile",specialty:["Trade", "Build"],area:"Palette Town",habitat:["Working the register"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:176,name:"Torkoal",specialty:["Burn"],area:"Rocky Ridges",habitat:["Mossy hot spring"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:177,name:"Kricketot",specialty:["Hype"],area:"Rocky Ridges",habitat:["Red tall grass", "Music and magazines"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:178,name:"Kricketune",specialty:["Hype"],area:"Rocky Ridges",habitat:["Music and magazines"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:179,name:"Chatot",specialty:["Hype", "Fly"],area:"Rocky Ridges",habitat:["Elevated red tall grass", "Elevated red tall grass", "Chirping recital"],time:"Morning/Day/Eve",weather:"All",rarity:"Common"},
+  {dex:180,name:"Riolu",specialty:["Build"],area:"Rocky Ridges",habitat:["Red tall grass", "Box to the rhythm"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:181,name:"Lucario",specialty:["Build"],area:"Rocky Ridges",habitat:["Box to the rhythm"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:182,name:"Stereo Rotom",specialty:["DJ"],area:"Rocky Ridges",habitat:["Music and magazines"],time:"All day",weather:"All",rarity:"Rare",special:true},
+  {dex:183,name:"Larvesta",specialty:["Burn"],area:"Rocky Ridges",habitat:["Tree-shaded graceful flower bed"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:184,name:"Volcarona",specialty:["Burn", "Litter"],area:"Rocky Ridges",habitat:["Tree-shaded graceful flower bed", "Piping-hot lava"],time:"All day",weather:"All",rarity:"Very Rare"},
+  {dex:185,name:"Rowlet",specialty:["Grow"],area:"Palette Town",habitat:["Fresh Veggie Field"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:186,name:"Dartrix",specialty:["Grow", "Chop"],area:"Rocky Ridges",habitat:["Pointy tree-shaded rocky tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:187,name:"Decidueye",specialty:["Grow", "Chop"],area:"Rocky Ridges",habitat:["Pointy tree-shaded rocky tall grass", "Modern living"],time:"All day",weather:"All",rarity:"Very Rare"},
+  {dex:188,name:"Scorbunny",specialty:["Burn"],area:"Rocky Ridges",habitat:["Red tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:189,name:"Raboot",specialty:["Burn"],area:"Rocky Ridges",habitat:["Open-air bath", "Refreshing locker room"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:190,name:"Cinderace",specialty:["Burn", "Hype"],area:"Rocky Ridges",habitat:["Red tall grass", "Refreshing locker room"],time:"All day",weather:"All",rarity:"Very Rare"},
+  {dex:191,name:"Skwovet",specialty:["Search", "Hype"],area:"Palette Town",habitat:["Tree-shaded  tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:192,name:"Greedent",specialty:["Party"],area:"Rocky Ridges",habitat:["Chef's kitchen"],time:"All day",weather:"All",rarity:"Common",special:true},
+  {dex:193,name:"Rolycoly",specialty:["Burn", "Gather"],area:"Rocky Ridges",habitat:["Railroad crossing"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:194,name:"Carkol",specialty:["Burn", "Gather"],area:"Rocky Ridges",habitat:["Railroad crossing"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:195,name:"Coalossal",specialty:["Burn", "Gather"],area:"Rocky Ridges",habitat:["Railroad crossing", "Heavy iron"],time:"All day",weather:"All",rarity:"Very Rare"},
+  {dex:196,name:"Toxel",specialty:["Generate"],area:"Rocky Ridges",habitat:["Lazy-photo album scrolling"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:197,name:"Toxtricity Amped Form",specialty:["Generate", "Hype"],area:"Rocky Ridges",habitat:["Amped rock stage"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:198,name:"Fidough",specialty:["Search"],area:"Rocky Ridges",habitat:["Graceful flower bed", "Best bread bakery"],time:"Morning/Day/Eve",weather:"All",rarity:"Common"},
+  {dex:199,name:"Dachsbun",specialty:["Search", "Trade"],area:"Rocky Ridges",habitat:["Graceful flower bed", "Best bread bakery"],time:"Morning/Day/Eve",weather:"All",rarity:"Rare"},
+  {dex:200,name:"Charcadet",specialty:["Burn"],area:"Rocky Ridges",habitat:["Piping-hot lava"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:201,name:"Armarouge",specialty:["Burn"],area:"Rocky Ridges",habitat:["Auspicious knight's shrine"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:202,name:"Ceruledge",specialty:["Burn"],area:"Rocky Ridges",habitat:["Malicious knight's shrine"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:203,name:"Glimmet",specialty:["Litter"],area:"Rocky Ridges",habitat:["Creepy white rocks", "Container snacking"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:204,name:"Glimmora",specialty:["Litter"],area:"Rocky Ridges",habitat:["Creepy white rocks", "Container snacking"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:205,name:"Gimmighoul",specialty:["Collect"],area:"Rocky Ridges",habitat:["Mini museum"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:206,name:"Gholdengo",specialty:["Collect"],area:"Rocky Ridges",habitat:["Absolute luxury"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:207,name:"Vulpix",specialty:["Burn"],area:"Sparkling Skylands",habitat:["Fluffy flower bed"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:208,name:"Ninetales",specialty:["Burn"],area:"Sparkling Skylands",habitat:["Fluffy flower bed", "Nine flames"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:209,name:"Poliwag",specialty:["Water"],area:"Sparkling Skylands",habitat:["Squeaky clean"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:210,name:"Poliwhirl",specialty:["Water"],area:"Sparkling Skylands",habitat:["Hydrated fluffy flower bed"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:211,name:"Poliwrath",specialty:["Water", "Build"],area:"Sparkling Skylands",habitat:["Sewer hole inspection", "Dojo training"],time:"All day",weather:"All",rarity:"-"},
+  {dex:212,name:"Politoed",specialty:["Water", "Hype"],area:"Rocky Ridges",habitat:["Hydrated graceful flower bed", "Flower garden stump stage", "Harmonious hot spring"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:213,name:"Abra",specialty:["Teleport"],area:"Sparkling Skylands",habitat:["Surging psychic power", "Fortune-teller's table"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:214,name:"Kadabra",specialty:["Teleport"],area:"Sparkling Skylands",habitat:["Fortune-teller's table"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:215,name:"Alakazam",specialty:["Teleport", "Trade"],area:"Sparkling Skylands",habitat:["Surging psychic power", "Experiment Space"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:218,name:"Porygon",specialty:["Recycle"],area:"Sparkling Skylands",habitat:["Researcher's desk"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:219,name:"Porygon2",specialty:["Recycle"],area:"Sparkling Skylands",habitat:["Work desk"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:220,name:"Porygon-Z",specialty:["Rarify"],area:"Sparkling Skylands",habitat:["Game Corner battle zone"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:221,name:"Dratini",specialty:["Water"],area:"Sparkling Skylands",habitat:["Hydrated fluffy flower bed", "Simple bathroom"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:222,name:"Dragonair",specialty:["Water"],area:"Sparkling Skylands",habitat:["Hydrated fluffy flower bed", "Simple bathroom"],time:"All day",weather:"All",rarity:"Very Rare"},
+  {dex:223,name:"Dragonite",specialty:["Water", "Fly"],area:"Sparkling Skylands",habitat:["Waterside dinghy"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:224,name:"Cyndaquil",specialty:["Burn"],area:"Sparkling Skylands",habitat:["Concrete pipe secret base"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:225,name:"Quilava",specialty:["Burn"],area:"Sparkling Skylands",habitat:["Concrete pipe secret base", "Fireplace nap spot"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:226,name:"Typhlosion",specialty:["Burn", "Trade"],area:"Sparkling Skylands",habitat:["Fireplace nap spot", "Top pop"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:227,name:"Misdreavus",specialty:["Trade"],area:"Sparkling Skylands",habitat:["Fluffy flower bed", "Office storeroom"],time:"Nighttime",weather:"All",rarity:"Common"},
+  {dex:228,name:"Mismagius",specialty:["Gather", "Trade"],area:"Sparkling Skylands",habitat:["Fluffy flower bed", "Home theater", "Office storeroom"],time:"Nighttime",weather:"All",rarity:"Very Rare"},
+  {dex:229,name:"Girafarig",specialty:["Gather"],area:"Sparkling Skylands",habitat:["Tree-shaded fluffy flower bed"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:230,name:"Farigiraf",specialty:["Gather", "Search"],area:"Sparkling Skylands",habitat:["Tree-shaded fluffy flower bed"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:231,name:"Ralts",specialty:["Teleport"],area:"Sparkling Skylands",habitat:["Study Area"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:232,name:"Kirlia",specialty:["Teleport"],area:"Sparkling Skylands",habitat:["Study Area", "Moisturizing makeup stand"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:233,name:"Gardevoir",specialty:["Teleport", "Trade"],area:"Sparkling Skylands",habitat:["Moisturizing makeup stand", "Mini library"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:234,name:"Gallade",specialty:["Teleport", "Build"],area:"Sparkling Skylands",habitat:["Dojo training"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:235,name:"Plusle",specialty:["Generate"],area:"Sparkling Skylands",habitat:["Picturesque photo cutout board"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:236,name:"Minun",specialty:["Generate"],area:"Sparkling Skylands",habitat:["Picturesque photo cutout board"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:237,name:"Trapinch",specialty:["Bulldoze", "Litter"],area:"Sparkling Skylands",habitat:["Pink tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:238,name:"Vibrava",specialty:["Bulldoze", "Fly"],area:"Sparkling Skylands",habitat:["Pink tall grass"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:239,name:"Flygon",specialty:["Bulldoze", "Fly"],area:"Sparkling Skylands",habitat:["Pink tall grass"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:240,name:"Swablu",specialty:["Litter"],area:"Sparkling Skylands",habitat:["Pink tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:241,name:"Altaria",specialty:["Litter", "Fly"],area:"Sparkling Skylands",habitat:["Birdsong garden"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:242,name:"Duskull",specialty:["Gather"],area:"Sparkling Skylands",habitat:["Pink tall grass"],time:"Nighttime",weather:"All",rarity:"Common"},
+  {dex:243,name:"Dusclops",specialty:["Gather"],area:"Sparkling Skylands",habitat:["Trash site TV"],time:"Nighttime",weather:"All",rarity:"Rare"},
+  {dex:244,name:"Dusknoir",specialty:["Gather", "Trade"],area:"Sparkling Skylands",habitat:["Trash site TV"],time:"Nighttime",weather:"All",rarity:"Rare"},
+  {dex:245,name:"Beldum",specialty:["Recycle"],area:"Sparkling Skylands",habitat:["Cycling rest stop"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:246,name:"Metang",specialty:["Recycle"],area:"Sparkling Skylands",habitat:["Professor's apprentice program"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:247,name:"Metagross",specialty:["Recycle", "Crush"],area:"Sparkling Skylands",habitat:["Gamer's paradise"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:248,name:"Snivy",specialty:["Grow", "Litter"],area:"Sparkling Skylands",habitat:["Playland"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:249,name:"Servine",specialty:["Grow", "Litter"],area:"Sparkling Skylands",habitat:["Tree-shaded fluffy flower bed"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:250,name:"Serperior",specialty:["Grow", "Litter"],area:"Sparkling Skylands",habitat:["Tree-shaded fluffy flower bed", "Public reading material"],time:"All day",weather:"All",rarity:"Very Rare"},
+  {dex:251,name:"Froakie",specialty:["Water"],area:"Sparkling Skylands",habitat:["Hydrated pink tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:252,name:"Frogadier",specialty:["Water"],area:"Sparkling Skylands",habitat:["Hydrated pink tall grass", "Prank button"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:253,name:"Greninja",specialty:["Water", "Chop"],area:"Sparkling Skylands",habitat:["Hydrated pink tall grass", "Prank button"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:254,name:"Dedenne",specialty:["Search"],area:"Sparkling Skylands",habitat:["Tire Park"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:255,name:"Noibat",specialty:["Search"],area:"Sparkling Skylands",habitat:["Rhythmic Living room"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:256,name:"Noivern",specialty:["Search", "Fly"],area:"Sparkling Skylands",habitat:["Rhythmic Living room"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:257,name:"Rookidee",specialty:["Chop"],area:"Sparkling Skylands",habitat:["Fluffy flower bed"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:258,name:"Corvisquire",specialty:["Chop"],area:"Sparkling Skylands",habitat:["Elevated pink tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:259,name:"Corviknight",specialty:["Chop", "Fly"],area:"Sparkling Skylands",habitat:["Elevated pink tall grass", "Sewer hole inspection"],time:"All day",weather:"All",rarity:"Very Rare"},
+  {dex:260,name:"Dreepy",specialty:["Gather", "Search"],area:"Sparkling Skylands",habitat:["Tree-shaded pink tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:261,name:"Drakloak",specialty:["Gather", "Search"],area:"Sparkling Skylands",habitat:["Tree-shaded pink tall grass", "Office storeroom"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:262,name:"Dragapult",specialty:["Gather", "Trade"],area:"Sparkling Skylands",habitat:["Office storeroom"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:263,name:"Sprigatito",specialty:["Grow"],area:"Sparkling Skylands",habitat:["Tree-shaded pink tall grass", "Interrogation desk"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:264,name:"Floragato",specialty:["Grow"],area:"Sparkling Skylands",habitat:["Interrogation desk"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:265,name:"Meowscarada",specialty:["Grow", "Hype"],area:"Sparkling Skylands",habitat:["Heart-pounding surprise box"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:266,name:"Wattrel",specialty:["Generate"],area:"Sparkling Skylands",habitat:["Elevated pink tall grass"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:267,name:"Kilowattrel",specialty:["Generate", "Fly"],area:"Sparkling Skylands",habitat:["Elevated pink tall grass"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:268,name:"Tinkatink",specialty:["Build"],area:"Palette Town",habitat:["Large luggage carrier", "Oversized dumping ground", "Sewer hole inspection"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:269,name:"Tinkatuff",specialty:["Build"],area:"Palette Town",habitat:["Large luggage carrier"],time:"All day",weather:"All",rarity:"Rare"},
+  {dex:270,name:"Tinkaton",specialty:["Engineer"],area:"Sparkling Skylands",habitat:["Oversized dumping ground"],time:"All day",weather:"All",rarity:"Common",special:true},
+  {dex:271,name:"Aerodactyl",specialty:["Fly"],area:"Rocky Ridges",habitat:["Wing Fossil Display"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:272,name:"Cranidos",specialty:["Crush"],area:"Rocky Ridges",habitat:["Skull Fossil display"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:273,name:"Rampardos",specialty:["Crush", "Litter"],area:"Rocky Ridges",habitat:["Headbutt Fossil display"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:274,name:"Shieldon",specialty:["Crush"],area:"Rocky Ridges",habitat:["Armor Fossil display"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:275,name:"Bastiodon",specialty:["Crush", "Litter"],area:"Rocky Ridges",habitat:["Shield Fossil display"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:276,name:"Tyrunt",specialty:["Crush"],area:"Rocky Ridges",habitat:["Jaw Fossil display"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:277,name:"Tyrantrum",specialty:["Crush", "Litter"],area:"Rocky Ridges",habitat:["Despot fossil display"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:278,name:"Amaura",specialty:["Crush"],area:"Rocky Ridges",habitat:["Sail Fossil display"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:279,name:"Aurorus",specialty:["Crush", "Litter"],area:"Rocky Ridges",habitat:["Tundra fossil display"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:280,name:"Eevee",specialty:["Trade"],area:"Palette Town",habitat:["Pretty flower bed"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:281,name:"Vaporeon",specialty:["Water"],area:"Palette Town",habitat:["Boundless blue beverage"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:282,name:"Jolteon",specialty:["Generate"],area:"Palette Town",habitat:["Electrifying potatoes"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:283,name:"Flareon",specialty:["Burn"],area:"Palette Town",habitat:["Burning-hot spice"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:284,name:"Espeon",specialty:["Gather"],area:"Palette Town",habitat:["Elegant daytime treats"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:285,name:"Umbreon",specialty:["Search"],area:"Palette Town",habitat:["Dark-chocolate cookies"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:286,name:"Leafeon",specialty:["Grow"],area:"Palette Town",habitat:["Leafy greens sandwich"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:287,name:"Glaceon",specialty:["Trade"],area:"Palette Town",habitat:["Chilly shaved ice"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:288,name:"Sylveon",specialty:["Hype"],area:"Palette Town",habitat:["Lovely ribbon cake"],time:"All day",weather:"All",rarity:"Common"},
+  {dex:289,name:"Kyogre",specialty:["???"],area:"Dream Island",habitat:[],time:"-",weather:"-",rarity:"-",legendary:true},
+  {dex:290,name:"Raikou",specialty:["Generate"],area:"Dream Island",habitat:[],time:"-",weather:"-",rarity:"-",legendary:true},
+  {dex:291,name:"Entei",specialty:["Burn"],area:"Dream Island",habitat:[],time:"-",weather:"-",rarity:"-",legendary:true},
+  {dex:292,name:"Suicune",specialty:["Water"],area:"Dream Island",habitat:[],time:"-",weather:"-",rarity:"-",legendary:true},
+  {dex:293,name:"Volcanion",specialty:["Burn"],area:"Dream Island",habitat:[],time:"-",weather:"-",rarity:"-",legendary:true},
+  {dex:294,name:"Articuno",specialty:["Fly"],area:"Dream Island",habitat:[],time:"-",weather:"-",rarity:"-",legendary:true},
+  {dex:295,name:"Zapdos",specialty:["Fly"],area:"Dream Island",habitat:[],time:"-",weather:"-",rarity:"-",legendary:true},
+  {dex:296,name:"Moltres",specialty:["Fly"],area:"Dream Island",habitat:[],time:"-",weather:"-",rarity:"-",legendary:true},
+  {dex:297,name:"Lugia",specialty:["???"],area:"Dream Island",habitat:[],time:"-",weather:"-",rarity:"-",legendary:true},
+  {dex:298,name:"Ho-Oh",specialty:["???"],area:"Dream Island",habitat:[],time:"-",weather:"-",rarity:"-",legendary:true},
+  {dex:299,name:"Mewtwo",specialty:["Teleport"],area:"Dream Island",habitat:[],time:"-",weather:"-",rarity:"-",legendary:true},
+  {dex:300,name:"Mew",specialty:["Teleport"],area:"Dream Island",habitat:[],time:"-",weather:"-",rarity:"-",legendary:true}
+];
+
+// ---- Utility ----
+function habitatSlug(name) {
+  return name.toLowerCase().replace(/ /g, '').replace(/\u00e9/g, 'e');
+}
+
+function spriteUrl(name) {
+  const id = SPRITE_MAP[name];
+  if (!id) return '';
+  return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/' + id + '.png';
+}
+
+function areaClass(area) {
+  if (area === 'Withered Wasteland' || area === 'Withered Wastelands') return 'area-withered-wasteland';
+  if (area === 'Bleak Beach') return 'area-bleak-beach';
+  if (area === 'Rocky Ridges') return 'area-rocky-ridges';
+  if (area === 'Sparkling Skylands') return 'area-sparkling-skylands';
+  if (area === 'Palette Town') return 'area-palette-town';
+  if (area === 'Dream Island') return 'area-dream-island';
+  return '';
+}
+
+function displayArea(area) {
+  if (area === 'Withered Wastelands') return 'Withered Wasteland';
+  return area;
+}
+
+function rarityClass(r) {
+  if (r === 'Common' || r === 'CommonCommon') return 'rarity-common';
+  if (r === 'Rare') return 'rarity-rare';
+  if (r === 'Very Rare') return 'rarity-very-rare';
+  return '';
+}
+
+const rarityOrder = {'Common':1,'CommonCommon':1,'Rare':2,'Very Rare':3,'-':0};
+
+// ---- Collect unique filter values ----
+const areaChips = ["Withered Wasteland","Bleak Beach","Rocky Ridges","Sparkling Skylands","Palette Town","Dream Island"];
+const specialtySet = new Set();
+const timeSet = new Set();
+const weatherSet = new Set();
+
+POKEMON.forEach(p => {
+  p.specialty.forEach(s => specialtySet.add(s));
+  if (p.time && p.time !== '-') {
+    p.time.split(',').forEach(t => timeSet.add(t.trim()));
+  }
+  if (p.weather && p.weather !== '-') {
+    p.weather.split(',').forEach(w => weatherSet.add(w.trim()));
+  }
+});
+
+const specialtyChips = [...specialtySet].sort();
+const timeChips = [...timeSet].sort();
+const weatherChips = [...weatherSet].sort();
+
+// ---- State ----
+const activeFilters = { area: new Set(), specialty: new Set(), time: new Set(), weather: new Set(), litter: new Set() };
+let sortCol = 'dex';
+let sortDir = 1;
+
+// ---- Build chips ----
+function buildChips(containerId, values, filterKey, isArea) {
+  const container = document.getElementById(containerId);
+  values.forEach(val => {
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.textContent = val;
+    if (isArea) chip.setAttribute('data-area', val);
+    chip.addEventListener('click', () => {
+      if (activeFilters[filterKey].has(val)) {
+        activeFilters[filterKey].delete(val);
+        chip.classList.remove('active');
+      } else {
+        activeFilters[filterKey].add(val);
+        chip.classList.add('active');
+      }
+      updateBadge(filterKey);
+      renderTable();
+    });
+    container.appendChild(chip);
+  });
+}
+
+buildChips('chips-area', areaChips, 'area', true);
+buildChips('chips-specialty', specialtyChips, 'specialty', false);
+buildChips('chips-time', timeChips, 'time', false);
+buildChips('chips-weather', weatherChips, 'weather', false);
+
+// litter chips built after LITTER_DROPS is defined below
+
+function updateBadge(key) {
+  const badge = document.getElementById('badge-' + key);
+  const count = activeFilters[key].size;
+  badge.textContent = count;
+  badge.classList.toggle('active', count > 0);
+}
+
+function toggleGroup(key) {
+  const container = document.getElementById('chips-' + key);
+  const arrow = document.getElementById('arrow-' + key);
+  container.classList.toggle('collapsed');
+  arrow.classList.toggle('collapsed');
+}
+
+// ---- Search ----
+const searchBox = document.getElementById('searchBox');
+searchBox.addEventListener('input', () => renderTable());
+
+// ---- Clear All ----
+function clearAllFilters() {
+  searchBox.value = '';
+  for (const key in activeFilters) {
+    activeFilters[key].clear();
+    updateBadge(key);
+    document.querySelectorAll('#chips-' + key + ' .chip').forEach(c => c.classList.remove('active'));
+  }
+  caughtFilter = '';
+  document.querySelectorAll('#chips-caught .chip').forEach(c => c.classList.remove('active'));
+  const badge = document.getElementById('badge-caught');
+  badge.textContent = '0';
+  badge.classList.remove('active');
+  renderTable();
+}
+
+// ---- Litter drop map ----
+const LITTER_DROPS = {
+  "Venusaur":"Leaf","Vileplume":"Leaf",
+  "Bellsprout":"Vine Rope","Weepinbell":"Vine Rope","Tangela":"Vine Rope","Tangrowth":"Vine Rope",
+  "Snivy":"Vine Rope","Servine":"Vine Rope","Serperior":"Vine Rope",
+  "Cacturne":"Sturdy Stick","Combee":"Honey","Haxorus":"Small Log",
+  "Grimer":"Nonburnable Garbage","Muk":"Nonburnable Garbage","Garbodor":"Nonburnable Garbage",
+  "Blissey":"Stone","Rampardos":"Stone","Bastiodon":"Stone","Tyrantrum":"Stone","Aurorus":"Stone",
+  "Spinarak":"Twine","Ariados":"Twine","Volcarona":"Twine",
+  "Mareep":"Fluff","Flaaffy":"Fluff","Swablu":"Fluff","Altaria":"Fluff",
+  "Paldean Wooper":"Squishy Clay","Clodsire":"Squishy Clay","Trapinch":"Squishy Clay",
+  "Glimmet":"Iron Ore","Glimmora":"Iron Ore"
+};
+
+const litterDropChips = [...new Set(Object.values(LITTER_DROPS))].sort();
+buildChips('chips-litter', litterDropChips, 'litter', false);
+
+// ---- Collection tracking (localStorage) ----
+const STORAGE_KEY = 'pokopia_caught';
+let caughtSet = new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
+
+function saveCaught() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([...caughtSet]));
+  updateProgress();
+}
+
+function toggleCaught(key) {
+  if (caughtSet.has(key)) caughtSet.delete(key);
+  else caughtSet.add(key);
+  saveCaught();
+  renderTable();
+}
+
+function updateProgress() {
+  const total = POKEMON.length;
+  const caught = caughtSet.size;
+  const pct = Math.round(caught / total * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = caught + ' / ' + total + ' Caught (' + pct + '%)';
+}
+
+// Caught filter state
+let caughtFilter = ''; // '' | 'Caught' | 'Uncaught'
+function toggleCaughtFilter(val, chip) {
+  if (caughtFilter === val) {
+    caughtFilter = '';
+    chip.classList.remove('active');
+  } else {
+    caughtFilter = val;
+    document.querySelectorAll('#chips-caught .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+  }
+  const badge = document.getElementById('badge-caught');
+  badge.textContent = caughtFilter ? '1' : '0';
+  badge.classList.toggle('active', !!caughtFilter);
+  renderTable();
+}
+
+updateProgress();
+
+// ---- Filter logic ----
+function matchesFilters(p) {
+  const search = searchBox.value.toLowerCase().trim();
+  if (search) {
+    const nameMatch = p.name.toLowerCase().includes(search);
+    const habitatMatch = p.habitat.some(h => h.toLowerCase().includes(search));
+    if (!nameMatch && !habitatMatch) return false;
+  }
+
+  if (activeFilters.area.size > 0) {
+    const da = displayArea(p.area);
+    if (!activeFilters.area.has(da)) return false;
+  }
+
+  if (activeFilters.specialty.size > 0) {
+    if (!p.specialty.some(s => activeFilters.specialty.has(s))) return false;
+  }
+
+  if (activeFilters.time.size > 0) {
+    if (p.time === '-') return false;
+    const times = p.time.split(',').map(t => t.trim());
+    if (!times.some(t => activeFilters.time.has(t))) return false;
+  }
+
+  if (activeFilters.weather.size > 0) {
+    if (p.weather === '-') return false;
+    const weathers = p.weather.split(',').map(w => w.trim());
+    if (!weathers.some(w => activeFilters.weather.has(w))) return false;
+  }
+
+  if (activeFilters.litter.size > 0) {
+    const drop = LITTER_DROPS[p.name];
+    if (!drop || !activeFilters.litter.has(drop)) return false;
+  }
+
+  if (caughtFilter === 'Caught' && !caughtSet.has(p.name)) return false;
+  if (caughtFilter === 'Uncaught' && caughtSet.has(p.name)) return false;
+
+  return true;
+}
+
+// ---- Sort ----
+function sortTable(col, type) {
+  if (sortCol === col) {
+    sortDir *= -1;
+  } else {
+    sortCol = col;
+    sortDir = 1;
+  }
+  document.querySelectorAll('thead th').forEach(th => {
+    th.classList.remove('sorted');
+    const arrow = th.querySelector('.sort-arrow');
+    if (arrow) arrow.innerHTML = '&#9650;';
+  });
+  const th = document.querySelector('thead th[data-col="' + col + '"]');
+  if (th) {
+    th.classList.add('sorted');
+    const arrow = th.querySelector('.sort-arrow');
+    if (arrow) arrow.innerHTML = sortDir === 1 ? '&#9650;' : '&#9660;';
+  }
+  renderTable();
+}
+
+function compareRows(a, b) {
+  let va, vb;
+  switch (sortCol) {
+    case 'dex': va = a.dex; vb = b.dex; return (va - vb) * sortDir;
+    case 'name': va = a.name.toLowerCase(); vb = b.name.toLowerCase(); return va < vb ? -sortDir : va > vb ? sortDir : 0;
+    case 'specialty': va = a.specialty.join(', ').toLowerCase(); vb = b.specialty.join(', ').toLowerCase(); return va < vb ? -sortDir : va > vb ? sortDir : 0;
+    case 'area': va = displayArea(a.area).toLowerCase(); vb = displayArea(b.area).toLowerCase(); return va < vb ? -sortDir : va > vb ? sortDir : 0;
+    case 'habitat': va = a.habitat.join(', ').toLowerCase(); vb = b.habitat.join(', ').toLowerCase(); return va < vb ? -sortDir : va > vb ? sortDir : 0;
+    case 'time': va = a.time.toLowerCase(); vb = b.time.toLowerCase(); return va < vb ? -sortDir : va > vb ? sortDir : 0;
+    case 'weather': va = a.weather.toLowerCase(); vb = b.weather.toLowerCase(); return va < vb ? -sortDir : va > vb ? sortDir : 0;
+    case 'rarity': va = rarityOrder[a.rarity] || 0; vb = rarityOrder[b.rarity] || 0; return (va - vb) * sortDir;
+    default: return 0;
+  }
+}
+
+// ---- Render ----
+function renderTable() {
+  const filtered = POKEMON.filter(matchesFilters);
+  filtered.sort(compareRows);
+
+  const tbody = document.getElementById('pokeBody');
+  const rows = [];
+
+  filtered.forEach(p => {
+    const sprite = spriteUrl(p.name);
+    const imgTag = sprite
+      ? '<img src="' + sprite + '" alt="' + p.name + '" loading="lazy">'
+      : '<span style="display:inline-block;width:40px;height:40px;background:rgba(255,255,255,0.05);border-radius:4px;"></span>';
+
+    const isLegendary = p.legendary;
+    const isSpecial = p.special;
+    const nameClass = isLegendary ? 'poke-name legendary' : 'poke-name';
+    const specialTag = isSpecial ? ' <span class="special-npc">(Special NPC)</span>' : '';
+
+    const litterDrop = LITTER_DROPS[p.name];
+    const specialtyHtml = p.specialty.map(s => {
+      if (s === 'Litter' && litterDrop) {
+        return '<span class="pill pill-specialty pill-litter">' + s + ' <span class="litter-drop">(' + litterDrop + ')</span></span>';
+      }
+      return '<span class="pill pill-specialty">' + s + '</span>';
+    }).join(' ');
+
+    const da = displayArea(p.area);
+    const areaHtml = '<span class="pill pill-area ' + areaClass(p.area) + '">' + da + '</span>';
+
+    const habitatHtml = p.habitat.length > 0
+      ? p.habitat.map(h => {
+          const slug = habitatSlug(h);
+          return '<a class="habitat-link" href="https://www.serebii.net/pokemonpokopia/habitatdex/' + slug + '.shtml" target="_blank">' + h + '</a>';
+        }).join(', ')
+      : '-';
+
+    const rc = rarityClass(p.rarity);
+    const rarityHtml = rc ? '<span class="' + rc + '">' + p.rarity + '</span>' : (p.rarity || '-');
+
+    const isCaught = caughtSet.has(p.name);
+    const rowClass = isCaught ? 'caught-row' : '';
+    const checked = isCaught ? 'checked' : '';
+
+    rows.push(
+      '<tr class="' + rowClass + '">' +
+      '<td class="caught-cell"><input type="checkbox" class="caught-cb" ' + checked + ' onchange="toggleCaught(\'' + p.name.replace(/'/g, "\\'") + '\')"></td>' +
+      '<td>' + p.dex + '</td>' +
+      '<td><div class="poke-cell">' + imgTag + '<span class="' + nameClass + '">' + p.name + specialTag + '</span></div></td>' +
+      '<td>' + specialtyHtml + '</td>' +
+      '<td>' + areaHtml + '</td>' +
+      '<td>' + habitatHtml + '</td>' +
+      '<td>' + p.time + '</td>' +
+      '<td>' + p.weather + '</td>' +
+      '<td>' + rarityHtml + '</td>' +
+      '</tr>'
+    );
+  });
+
+  tbody.innerHTML = rows.join('');
+  document.getElementById('statsText').textContent = 'Showing ' + filtered.length + ' of ' + POKEMON.length + ' Pokemon';
+}
+
+// Initial render
+renderTable();
+</script>
+
+</body>
+</html>
